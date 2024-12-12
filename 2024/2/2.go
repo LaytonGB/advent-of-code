@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"log"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -67,62 +68,66 @@ Outer1:
 			switch change {
 			case DECREASING:
 				if last >= curr || last < curr-3 {
-					log.Printf("BAD %v\n", data[i])
 					continue Outer1
 				}
 			case INCREASING:
 				if last <= curr || last > curr+3 {
-					log.Printf("BAD %v\n", data[i])
 					continue Outer1
 				}
 			}
 			last = curr
 		}
 
-		log.Printf("GOOD %v\n", data[i])
 		res1 += 1
 	}
+}
 
-	// q2
-Outer2:
-	for i := range 1000 {
-		var (
-			bar      int
-			problems int
-		)
+// q2
+func abs(a int) int {
+	return max(a, a*-1)
+}
 
-		last := data[i][0]
-		for _, curr := range data[i][1:] {
-			var new_bar = bar
-			if last < curr && last >= curr-3 {
-				new_bar += 1
-			} else if last > curr && last <= curr+3 {
-				new_bar -= 1
+func isSameSign(a, b int) bool {
+	return a/abs(a) == b/abs(b)
+}
+
+func init() {
+	var diffs [1000][]int
+
+	for i, level := range data {
+		diffs[i] = make([]int, len(level)-1)
+		for j := range len(level) - 1 {
+			diffs[i][j] = level[j+1] - level[j]
+		}
+	}
+
+	for _, level := range diffs {
+		tolerance := 2
+
+	Outer2:
+		for tolerance > 0 {
+			if level[0] == 0 || abs(level[0]) > 3 {
+				level = level[1:]
+				tolerance -= 1
+				continue
 			}
 
-			var is_new_bar_bad bool
-			if bar < 0 {
-				is_new_bar_bad = bar <= new_bar
-			} else if bar > 0 {
-				is_new_bar_bad = bar >= new_bar
-			} else {
-				is_new_bar_bad = bar == new_bar
+			j := 0
+			for j < len(level)-1 {
+				if level[j+1] == 0 || abs(level[j+1]) > 3 || !isSameSign(level[j], level[j+1]) {
+					level = slices.Concat(level[:j+1], level[j+2:])
+					tolerance -= 1
+					continue Outer2
+				}
+				j += 1
 			}
 
-			if is_new_bar_bad {
-				problems += 1
-			}
-
-			if problems >= 2 {
-				log.Printf("BAD %v\n", data[i])
-				continue Outer2
-			}
-
-			bar = new_bar
+			break
 		}
 
-		log.Printf("GOOD %v\n", data[i])
-		res2 += 1
+		if tolerance > 0 {
+			res2 += 1
+		}
 	}
 }
 
